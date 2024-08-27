@@ -47,7 +47,7 @@ describe("Todos Component", () => {
 
     const todoItems = screen.getAllByText(todoItemTitle)
 
-    expect(todoItems).toBeDefined()
+    expect(todoItems[0]).toBeDefined()
     expect(todoItems.length).not.toBeGreaterThan(1)
     expect(input.value).toBe("")
   })
@@ -72,5 +72,33 @@ describe("Todos Component", () => {
 
     expect(deleteButton).toHaveProperty("type", "button")
     expect(todoItems.length).not.toBeGreaterThan(0)
+  })
+
+  it("should can be edit todo item", async () => {
+    render(<Todos />)
+
+    const todoTitle = "Nova tarefa"
+    const newTodoTitle = "Tarefa editada"
+    const input = screen.getByPlaceholderText("Digite o título da tarefa")
+    const addButton = screen.getByLabelText("Adicionar tarefa")
+
+    await userEvent.type(input, todoTitle)
+    await userEvent.click(addButton)
+
+    const editButton = screen.getByLabelText(`Editar tarefa:${todoTitle}`)
+    await userEvent.click(editButton)
+
+    const editInput = screen.getByDisplayValue(todoTitle)
+    await userEvent.type(editInput, newTodoTitle, {
+      initialSelectionStart: 0,
+      initialSelectionEnd: newTodoTitle.length,
+    })
+
+    const saveButton = screen.getByLabelText("Salvar alteração")
+    await userEvent.click(saveButton)
+
+    const newTodoItem = screen.getByText(newTodoTitle)
+
+    expect(newTodoItem).toBeDefined()
   })
 })
