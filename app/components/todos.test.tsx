@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { Todos } from "./todos"
+import "@testing-library/jest-dom"
 
 describe("Todos Component", () => {
   it("should have a title 'Minhas tarefas'", () => {
@@ -52,7 +53,7 @@ describe("Todos Component", () => {
     expect(input.value).toBe("")
   })
 
-  it("should delete a todo item", async () => {
+  it("should can be delete a todo item", async () => {
     render(<Todos />)
 
     const todoItemTitle = "Nova tarefa 123"
@@ -100,5 +101,48 @@ describe("Todos Component", () => {
     const newTodoItem = screen.getByText(newTodoTitle)
 
     expect(newTodoItem).toBeDefined()
+  })
+
+  it("should change status of todo item to done", async () => {
+    render(<Todos />)
+
+    const todoTitle = "Nova tarefa"
+
+    const input = screen.getByPlaceholderText("Digite o título da tarefa")
+    await userEvent.type(input, todoTitle)
+
+    const addButton = screen.getByLabelText("Adicionar tarefa")
+    await userEvent.click(addButton)
+
+    const statusButton = screen.getByLabelText(`Alterar status:${todoTitle}`)
+
+    await userEvent.click(statusButton)
+
+    expect(screen.getByText(todoTitle)).toHaveClass("line-through")
+    expect(screen.getByLabelText(`tarefa concluída:${todoTitle}`)).toBeDefined()
+    expect(
+      screen.queryByLabelText(`tarefa em andamento:${todoTitle}`)
+    ).toBeNull()
+  })
+
+  it("should return to pending status when there are two clicks on the change status button", async () => {
+    render(<Todos />)
+
+    const todoTitle = "Nova tarefa"
+
+    const input = screen.getByPlaceholderText("Digite o título da tarefa")
+    await userEvent.type(input, todoTitle)
+
+    const addButton = screen.getByLabelText("Adicionar tarefa")
+    await userEvent.click(addButton)
+
+    const statusButton = screen.getByLabelText(`Alterar status:${todoTitle}`)
+
+    await userEvent.dblClick(statusButton)
+
+    expect(screen.queryByLabelText(`tarefa concluída:${todoTitle}`)).toBeNull()
+    expect(
+      screen.queryByLabelText(`tarefa em andamento:${todoTitle}`)
+    ).toBeDefined()
   })
 })
