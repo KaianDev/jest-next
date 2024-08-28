@@ -1,25 +1,13 @@
 "use client"
 
 import { FormEvent, useState } from "react"
-import {
-  CheckIcon,
-  EditIcon,
-  Loader2Icon,
-  LoaderIcon,
-  PlusIcon,
-  SaveIcon,
-  TrashIcon,
-} from "lucide-react"
 import { v4 as uuid } from "uuid"
-
-interface TodoItem {
-  id: string
-  title: string
-  done: boolean
-}
+import { TodoItem } from "./todo-item"
+import { Todo } from "../types/todo"
+import { TodoForm } from "./todo-form"
 
 export const Todos = () => {
-  const [todos, setTodos] = useState<TodoItem[]>([])
+  const [todos, setTodos] = useState<Todo[]>([])
   const [editInput, setEditInput] = useState<undefined | string>()
 
   const handleAddNewTodoSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -96,92 +84,22 @@ export const Todos = () => {
       <h1 className="text-3xl">Minhas tarefas</h1>
 
       <div className="max-w-xl w-full flex items-center justify-center flex-col">
-        {editInput && (
-          <form
-            onSubmit={handleEditTodoSubmit}
-            className="flex items-center justify-center gap-3 w-full">
-            <input
-              type="text"
-              name="title"
-              defaultValue={editInput}
-              placeholder="Digite o título da tarefa"
-              className="p-3 bg-zinc-900 rounded-md w-full "
-            />
-            <button
-              type="submit"
-              aria-label="Salvar alteração"
-              className="bg-emerald-500 h-full aspect-square items-center justify-center flex rounded-md">
-              <SaveIcon size={24} />
-            </button>
-          </form>
-        )}
-
-        {!editInput && (
-          <form
-            onSubmit={handleAddNewTodoSubmit}
-            className="flex items-center justify-center gap-3 w-full">
-            <input
-              type="text"
-              name="title"
-              placeholder="Digite o título da tarefa"
-              className="p-3 bg-zinc-900 rounded-md w-full "
-            />
-
-            <button
-              type="submit"
-              aria-label="Adicionar tarefa"
-              className="bg-emerald-500 h-full aspect-square items-center justify-center flex rounded-md">
-              <PlusIcon size={24} />
-            </button>
-          </form>
-        )}
+        <TodoForm
+          inputDefaultValue={editInput}
+          onAddTodoSubmit={handleAddNewTodoSubmit}
+          onEditTodoSubmit={handleEditTodoSubmit}
+        />
 
         {todos.length > 0 && (
           <div className="bg-zinc-800 space-y-2 mt-4 w-full max-w-xl rounded-md p-3">
-            {todos.map((item) => (
-              <div
-                key={item.id}
-                className="p-2 bg-zinc-900 rounded-md gap-3 flex items-center justify-between">
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => handleToggleTodoStatus(item.id)}
-                    aria-label={`Alterar status:${item.title}`}
-                    className="bg-emerald-500 p-1 rounded-md flex items-center justify-center">
-                    {item.done ? (
-                      <span aria-label={`tarefa concluída:${item.title}`}>
-                        <CheckIcon size={18} className="text-zinc-50" />
-                      </span>
-                    ) : (
-                      <span aria-label={`tarefa em andamento:${item.title}`}>
-                        <Loader2Icon
-                          size={18}
-                          strokeWidth={3}
-                          className="animate-spin text-zinc-50"
-                        />
-                      </span>
-                    )}
-                  </button>
-
-                  <p className={item.done ? "line-through" : ""}>
-                    {item.title}
-                  </p>
-                </div>
-
-                <div className="space-x-3">
-                  <button
-                    onClick={() => handleEditButtonClick(item.title)}
-                    type="button"
-                    aria-label={`Editar tarefa:${item.title}`}>
-                    <EditIcon size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTodoItem(item.id)}
-                    type="button"
-                    aria-label={`Apagar tarefa:${item.title}`}>
-                    <TrashIcon size={18} />
-                  </button>
-                </div>
-              </div>
+            {todos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onDeleteTodo={handleDeleteTodoItem}
+                onEditTodo={handleEditButtonClick}
+                onToggleStatusTodo={handleToggleTodoStatus}
+              />
             ))}
           </div>
         )}
