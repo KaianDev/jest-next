@@ -1,7 +1,15 @@
 "use client"
 
 import { FormEvent, useState } from "react"
-import { EditIcon, PlusIcon, SaveIcon, TrashIcon } from "lucide-react"
+import {
+  CheckIcon,
+  EditIcon,
+  Loader2Icon,
+  LoaderIcon,
+  PlusIcon,
+  SaveIcon,
+  TrashIcon,
+} from "lucide-react"
 import { v4 as uuid } from "uuid"
 
 interface TodoItem {
@@ -67,12 +75,20 @@ export const Todos = () => {
     e.currentTarget.reset()
   }
 
-  const handleDeleteTodoItem = (id: string) => {
-    setTodos((prev) => prev.filter((i) => i.id !== id))
+  const handleDeleteTodoItem = (todoId: string) => {
+    setTodos((prev) => prev.filter((i) => i.id !== todoId))
   }
 
   const handleEditButtonClick = (title: string) => {
     setEditInput(title)
+  }
+
+  const handleToggleTodoStatus = (todoId: string) => {
+    setTodos((prev) =>
+      prev.map((item) =>
+        item.id === todoId ? { ...item, done: !item.done } : item
+      )
+    )
   }
 
   return (
@@ -94,7 +110,7 @@ export const Todos = () => {
             <button
               type="submit"
               aria-label="Salvar alteração"
-              className="bg-purple-700 h-full aspect-square items-center justify-center flex rounded-md">
+              className="bg-emerald-500 h-full aspect-square items-center justify-center flex rounded-md">
               <SaveIcon size={24} />
             </button>
           </form>
@@ -114,7 +130,7 @@ export const Todos = () => {
             <button
               type="submit"
               aria-label="Adicionar tarefa"
-              className="bg-purple-700 h-full aspect-square items-center justify-center flex rounded-md">
+              className="bg-emerald-500 h-full aspect-square items-center justify-center flex rounded-md">
               <PlusIcon size={24} />
             </button>
           </form>
@@ -126,7 +142,30 @@ export const Todos = () => {
               <div
                 key={item.id}
                 className="p-2 bg-zinc-900 rounded-md gap-3 flex items-center justify-between">
-                <p className="">{item.title}</p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => handleToggleTodoStatus(item.id)}
+                    aria-label={`Alterar status:${item.title}`}
+                    className="bg-emerald-500 p-1 rounded-md flex items-center justify-center">
+                    {item.done ? (
+                      <span aria-label={`tarefa concluída:${item.title}`}>
+                        <CheckIcon size={18} className="text-zinc-50" />
+                      </span>
+                    ) : (
+                      <span aria-label={`tarefa em andamento:${item.title}`}>
+                        <Loader2Icon
+                          size={18}
+                          strokeWidth={3}
+                          className="animate-spin text-zinc-50"
+                        />
+                      </span>
+                    )}
+                  </button>
+
+                  <p className={item.done ? "line-through" : ""}>
+                    {item.title}
+                  </p>
+                </div>
 
                 <div className="space-x-3">
                   <button
