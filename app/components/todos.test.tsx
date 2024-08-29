@@ -1,42 +1,52 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { Todos } from "./todos"
-import "@testing-library/jest-dom"
 
 describe("Todos Component", () => {
+  const setup = () => {
+    const utils = render(<Todos />)
+    const input = screen.getByPlaceholderText(/Digite o título da tarefa/i)
+    const addButton = screen.getByLabelText(/Adicionar tarefa/i)
+
+    return {
+      input,
+      addButton,
+      ...utils,
+    }
+  }
+
   it("should have a title 'Minhas tarefas'", () => {
-    render(<Todos />)
-
+    const { getByText } = render(<Todos />)
     const title = "Minhas tarefas"
-    const todosTitle = screen.getAllByText(title)
-
-    expect(todosTitle).toBeDefined()
+    expect(getByText(title)).toBeInTheDocument()
   })
 
   it("should have a input to add new Todo", () => {
-    render(<Todos />)
-
-    const input = screen.getByPlaceholderText("Digite o título da tarefa")
-
+    const { input } = setup()
     expect(input).toBeDefined()
   })
 
   it("should have a button to add new Todo", () => {
-    render(<Todos />)
-    const button = screen.getByLabelText("Adicionar tarefa")
-
-    expect(button).toBeDefined()
+    const { addButton } = setup()
+    expect(addButton).toBeInTheDocument()
   })
 
   it("should add new task", async () => {
-    render(<Todos />)
-
+    const { input, addButton, getAllByText } = setup()
     const todoItemTitle = "Nova tarefa"
 
-    const input = screen.getByPlaceholderText(
-      "Digite o título da tarefa"
-    ) as HTMLInputElement
-    const addButton = screen.getByLabelText("Adicionar tarefa")
+    await userEvent.type(input, todoItemTitle)
+    await userEvent.click(addButton)
+
+    const todoItems = getAllByText(todoItemTitle)
+
+    expect(todoItems[0]).toBeInTheDocument()
+    expect((input as HTMLInputElement).value).toBe("")
+  })
+
+  it("should not add two todo same title", async () => {
+    const { input, addButton, getAllByText } = setup()
+    const todoItemTitle = "Nova tarefa"
 
     await userEvent.type(input, todoItemTitle)
     await userEvent.click(addButton)
@@ -46,103 +56,108 @@ describe("Todos Component", () => {
     await userEvent.type(input, todoItemTitle)
     await userEvent.click(addButton)
 
-    const todoItems = screen.getAllByText(todoItemTitle)
+    const todoItems = getAllByText(todoItemTitle)
 
-    expect(todoItems[0]).toBeDefined()
+    expect(todoItems[0]).toBeInTheDocument()
     expect(todoItems.length).not.toBeGreaterThan(1)
-    expect(input.value).toBe("")
+    expect((input as HTMLInputElement).value).toBe("")
   })
 
-  it("should can be delete a todo item", async () => {
-    render(<Todos />)
+  it("should delete a todo item", async () => {
+    const { input, addButton, getByLabelText, queryAllByText } = setup()
 
     const todoItemTitle = "Nova tarefa 123"
 
-    const input = screen.getByPlaceholderText("Digite o título da tarefa")
-
     await userEvent.type(input, todoItemTitle)
-
-    const addButton = screen.getByLabelText("Adicionar tarefa")
 
     await userEvent.click(addButton)
 
-    const deleteButton = screen.getByLabelText(`Apagar tarefa:${todoItemTitle}`)
+    const deleteButton = getByLabelText(`Apagar tarefa:${todoItemTitle}`)
     await userEvent.click(deleteButton)
 
-    const todoItems = screen.queryAllByText(todoItemTitle)
+    const todoItems = queryAllByText(todoItemTitle)
 
     expect(deleteButton).toHaveProperty("type", "button")
     expect(todoItems.length).not.toBeGreaterThan(0)
   })
 
-  it("should can be edit todo item", async () => {
-    render(<Todos />)
+  it("should edit todo item", async () => {
+    const {
+      input,
+      addButton,
+      getByLabelText,
+      getByDisplayValue,
+      getByText,
+      queryByText,
+    } = setup()
 
     const todoTitle = "Nova tarefa"
     const newTodoTitle = "Tarefa editada"
-    const input = screen.getByPlaceholderText("Digite o título da tarefa")
-    const addButton = screen.getByLabelText("Adicionar tarefa")
 
     await userEvent.type(input, todoTitle)
     await userEvent.click(addButton)
 
-    const editButton = screen.getByLabelText(`Editar tarefa:${todoTitle}`)
+    const editButton = getByLabelText(`Editar tarefa:${todoTitle}`)
     await userEvent.click(editButton)
 
-    const editInput = screen.getByDisplayValue(todoTitle)
+    const editInput = getByDisplayValue(todoTitle)
+
     await userEvent.type(editInput, newTodoTitle, {
       initialSelectionStart: 0,
       initialSelectionEnd: newTodoTitle.length,
     })
 
-    const saveButton = screen.getByLabelText("Salvar alteração")
+    const saveButton = getByLabelText("Salvar alteração")
     await userEvent.click(saveButton)
 
-    const newTodoItem = screen.getByText(newTodoTitle)
+    const newTodoItem = getByText(newTodoTitle)
+    const oldTodoItem = queryByText(todoTitle)
 
-    expect(newTodoItem).toBeDefined()
+    expect(newTodoItem).toBeInTheDocument()
+    expect(oldTodoItem).not.toBeInTheDocument()
   })
 
   it("should change status of todo item to done", async () => {
-    render(<Todos />)
+    const { input, addButton, getByLabelText, getByText, queryByLabelText } =
+      setup()
 
     const todoTitle = "Nova tarefa"
-
-    const input = screen.getByPlaceholderText("Digite o título da tarefa")
     await userEvent.type(input, todoTitle)
-
-    const addButton = screen.getByLabelText("Adicionar tarefa")
     await userEvent.click(addButton)
 
-    const statusButton = screen.getByLabelText(`Alterar status:${todoTitle}`)
+    const statusButton = getByLabelText(`Alterar status:${todoTitle}`)
 
     await userEvent.click(statusButton)
 
-    expect(screen.getByText(todoTitle)).toHaveClass("line-through")
-    expect(screen.getByLabelText(`tarefa concluída:${todoTitle}`)).toBeDefined()
-    expect(
-      screen.queryByLabelText(`tarefa em andamento:${todoTitle}`)
-    ).toBeNull()
+    const todoItemDone = getByLabelText(`tarefa concluída:${todoTitle}`)
+    const todoItemIsPending = queryByLabelText(
+      `tarefa em andamento:${todoTitle}`
+    )
+
+    expect(getByText(todoTitle)).toHaveClass("line-through")
+    expect(todoItemDone).toBeInTheDocument()
+    expect(todoItemIsPending).not.toBeInTheDocument()
   })
 
-  it("should return to pending status when there are two clicks on the change status button", async () => {
-    render(<Todos />)
+  it("should return pending status when there are two clicks on the change status button", async () => {
+    const { input, addButton, getByLabelText, queryByLabelText } = setup()
 
     const todoTitle = "Nova tarefa"
 
-    const input = screen.getByPlaceholderText("Digite o título da tarefa")
     await userEvent.type(input, todoTitle)
 
-    const addButton = screen.getByLabelText("Adicionar tarefa")
     await userEvent.click(addButton)
 
-    const statusButton = screen.getByLabelText(`Alterar status:${todoTitle}`)
+    const statusButton = getByLabelText(`Alterar status:${todoTitle}`)
 
     await userEvent.dblClick(statusButton)
 
-    expect(screen.queryByLabelText(`tarefa concluída:${todoTitle}`)).toBeNull()
-    expect(
-      screen.queryByLabelText(`tarefa em andamento:${todoTitle}`)
-    ).toBeDefined()
+    const todoItemDone = queryByLabelText(`tarefa concluída:${todoTitle}`)
+    const todoItemIsPending = queryByLabelText(
+      `tarefa em andamento:${todoTitle}`
+    )
+
+    expect(todoItemDone).not.toBeInTheDocument()
+    expect(todoItemIsPending).toBeInTheDocument()
   })
 })
